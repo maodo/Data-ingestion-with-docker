@@ -16,20 +16,23 @@ def main(params):
     url = params.url
 
     # Download parquet file
-    #https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2021-01.parquet
     os.system(f'wget {url} -O {parquet_name}')
     
+    df = pd.read_parquet(parquet_name,engine='fastparquet')
+    print(df.head(10))
+    # Database connection
     engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{db}')
     engine.url
     engine.connect()
-    #parquet_name = 'yellow_tripdata_2021-01.parquet'
-    df = pd.read_parquet(parquet_name,engine='fastparquet')
+    # Print the corresponding sql schema
     print(pd.io.sql.get_schema(df, name = "yellow_taxi_data",con=engine))
 
+    # Load the column names to our database
     df.head(0).to_sql(name=table_name, con=engine,if_exists='replace')
     # We will only populate with the first 1000 rows
-    df.head(100).to_sql(name=table_name,con=engine,if_exists='append')
+    df.head(1000).to_sql(name=table_name,con=engine,if_exists='append')
 
+    # Let's test our database with some basic queries
     query = """
     SELECT * FROM pg_catalog.pg_tables
     WHERE schemaname != 'pg_catalog' AND schemaname !='information_schema'
@@ -68,4 +71,4 @@ if __name__ == '__main__':
 #     --port=5433 \
 #     --db=ny_taxi \
 #     --table_name=yellow_taxi_data \
-#     --url='https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2021-01.parquet'
+#     --url='https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-01.parquet'
